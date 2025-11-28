@@ -1,0 +1,298 @@
+<div class="nafath-simulator-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Nafath Simulator</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" (click)="generateProfile()" [disabled]="loading">
+        <i class="bi bi-plus-circle me-1"></i> Generate Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- Bulk Generation Card -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Bulk Generation</h5>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Number of Profiles</label>
+          <input type="number" class="form-control" [(ngModel)]="bulkCount" min="1" max="50">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ID Type</label>
+          <select class="form-select" [(ngModel)]="idType">
+            <option value="NATIONAL_ID">National ID</option>
+            <option value="IQAMA">Iqama</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-success" (click)="generateBulk()" [disabled]="loading">
+            <i class="bi bi-lightning-fill me-1"></i> Generate Bulk
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profiles Table -->
+  <div class="card">
+    <div class="card-body">
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && profiles.length === 0" class="text-center py-5 text-muted">
+        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+        <p class="mt-3">No profiles found. Generate some profiles to get started.</p>
+      </div>
+
+      <div *ngIf="!loading && profiles.length > 0">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>National ID</th>
+                <th>Name (English)</th>
+                <th>Name (Arabic)</th>
+                <th>Mobile</th>
+                <th>City</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let profile of profiles">
+                <td>{{ profile.nationalId }}</td>
+                <td>{{ profile.fullNameEn }}</td>
+                <td>{{ profile.fullNameAr }}</td>
+                <td>{{ profile.mobile }}</td>
+                <td>{{ profile.city }}</td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(profile.status)">
+                    {{ profile.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" (click)="viewProfile(profile)" title="View">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" (click)="editProfile(profile)" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-warning" (click)="openStatusModal(profile)" title="Change Status">
+                      <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                    <button class="btn btn-outline-info" (click)="testAuth(profile)" title="Test Auth">
+                      <i class="bi bi-shield-check"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" (click)="deleteProfile(profile)" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="text-muted">
+            Showing {{ currentPage * pageSize + 1 }} to {{ Math.min((currentPage + 1) * pageSize, totalElements) }} of {{ totalElements }} profiles
+          </div>
+          <nav>
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <a class="page-link" (click)="previousPage()" style="cursor: pointer;">Previous</a>
+              </li>
+              <li class="page-item" *ngFor="let page of pages" [class.active]="page === currentPage">
+                <a class="page-link" (click)="goToPage(page)" style="cursor: pointer;">{{ page + 1 }}</a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                <a class="page-link" (click)="nextPage()" style="cursor: pointer;">Next</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" *ngIf="selectedProfile">
+      <div class="modal-header">
+        <h5 class="modal-title">Profile Details</h5>
+        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <strong>National ID:</strong> {{ selectedProfile.nationalId }}
+          </div>
+          <div class="col-md-6">
+            <strong>ID Type:</strong> {{ selectedProfile.idType }}
+          </div>
+          <div class="col-md-6">
+            <strong>Name (English):</strong> {{ selectedProfile.fullNameEn }}
+          </div>
+          <div class="col-md-6">
+            <strong>Name (Arabic):</strong> {{ selectedProfile.fullNameAr }}
+          </div>
+          <div class="col-md-6">
+            <strong>Date of Birth (Gregorian):</strong> {{ selectedProfile.birthDateGregorian }}
+          </div>
+          <div class="col-md-6">
+            <strong>Date of Birth (Hijri):</strong> {{ selectedProfile.birthDateHijri }}
+          </div>
+          <div class="col-md-6">
+            <strong>Gender:</strong> {{ selectedProfile.gender }}
+          </div>
+          <div class="col-md-6">
+            <strong>Country:</strong> {{ selectedProfile.country }}
+          </div>
+          <div class="col-md-6">
+            <strong>Region:</strong> {{ selectedProfile.region }}
+          </div>
+          <div class="col-md-6">
+            <strong>Mobile:</strong> {{ selectedProfile.mobile }}
+          </div>
+          <div class="col-md-12">
+            <strong>Address:</strong> {{ selectedProfile.buildingNumber }} {{ selectedProfile.street }}, {{ selectedProfile.district }}, {{ selectedProfile.city }}, {{ selectedProfile.region }} {{ selectedProfile.postalCode }}
+          </div>
+          <div class="col-md-6">
+            <strong>Status:</strong> 
+            <span class="badge" [ngClass]="getStatusBadgeClass(selectedProfile.status)">
+              {{ selectedProfile.status }}
+            </span>
+          </div>
+          <div class="col-md-6" *ngIf="selectedProfile.notes">
+            <strong>Notes:</strong> {{ selectedProfile.notes }}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeViewModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" *ngIf="selectedProfile">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Profile</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Full Name (English)</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.fullNameEn">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Full Name (Arabic)</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.fullNameAr">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Mobile Number</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.mobile">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Gender</label>
+            <select class="form-select" [(ngModel)]="selectedProfile.gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">City</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.city">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">District</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.district">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Street</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.street">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Building Number</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedProfile.buildingNumber">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="selectedProfile.status">
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="selectedProfile.notes"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal" [class.show]="showStatusModal" [style.display]="showStatusModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" *ngIf="selectedProfile">
+      <div class="modal-header">
+        <h5 class="modal-title">Update Status</h5>
+        <button type="button" class="btn-close" (click)="closeStatusModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <strong>Profile:</strong> {{ selectedProfile.fullNameEn }} ({{ selectedProfile.nationalId }})
+        </div>
+        <div class="mb-3">
+          <strong>Current Status:</strong> 
+          <span class="badge ms-2" [ngClass]="getStatusBadgeClass(selectedProfile.status)">
+            {{ selectedProfile.status }}
+          </span>
+        </div>
+        <hr>
+        <p class="text-muted mb-3">Select a new status:</p>
+        <div class="d-grid gap-2">
+          <button *ngFor="let status of statusOptions" 
+                  class="btn btn-lg text-start status-button"
+                  [class.btn-outline-success]="status === 'COMPLETED'"
+                  [class.btn-outline-warning]="status === 'WAITING'"
+                  [class.btn-outline-danger]="status === 'REJECTED'"
+                  [class.btn-outline-secondary]="status === 'EXPIRED'"
+                  [class.btn-outline-dark]="status === 'ERROR'"
+                  [disabled]="selectedProfile.status === status"
+                  (click)="updateStatus(status)">
+            <div class="d-flex align-items-start">
+              <i class="bi me-3 fs-4" [ngClass]="getStatusIcon(status)"></i>
+              <div class="flex-grow-1">
+                <div class="fw-bold">{{ status }}</div>
+                <small class="text-muted">{{ getStatusDescription(status) }}</small>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeStatusModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="showViewModal || showEditModal || showStatusModal" *ngIf="showViewModal || showEditModal || showStatusModal"></div>

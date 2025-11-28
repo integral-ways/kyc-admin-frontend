@@ -1,0 +1,13 @@
+<div class="notification-container">
+  <div *ngFor="let notification of notifications$ | async" 
+       class="alert alert-dismissible fade show"
+       [ngClass]="'alert-' + notification.type"
+       role="alert">
+    <strong *ngIf="notification.type === 'success'">Success!</strong>
+    <strong *ngIf="notification.type === 'danger'">Error!</strong>
+    <strong *ngIf="notification.type === 'warning'">Warning!</strong>
+    <strong *ngIf="notification.type === 'info'">Info!</strong>
+    {{ notification.message }}
+    <button type="button" class="btn-close" (click)="close(notification)"></button>
+  </div>
+</div>

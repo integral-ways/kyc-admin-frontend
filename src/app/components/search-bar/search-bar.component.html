@@ -1,0 +1,15 @@
+<div class="search-bar">
+  <div class="input-group">
+    <input type="text" 
+           class="form-control" 
+           placeholder="Search by name, email, mobile, or ID..." 
+           [(ngModel)]="searchQuery"
+           (keyup.enter)="onSearch()">
+    <button class="btn btn-outline-secondary" type="button" (click)="onClear()" *ngIf="searchQuery">
+      <i class="bi bi-x"></i>
+    </button>
+    <button class="btn btn-primary" type="button" (click)="onSearch()">
+      <i class="bi bi-search me-1"></i> Search
+    </button>
+  </div>
+</div>
