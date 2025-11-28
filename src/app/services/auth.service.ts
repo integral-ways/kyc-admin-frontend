@@ -22,44 +22,46 @@ export interface LoginResponse {
 })
 export class AuthService {
   private apiUrl = environment.apiUrl;
+  private token: string | null = null;
   private currentUserSubject = new BehaviorSubject<LoginResponse | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser));
-    }
+    // No persistence - token is only stored in-memory
   }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response));
+          // Store token and user in-memory only
+          this.token = response.token;
           this.currentUserSubject.next(response);
         })
       );
   }
 
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
+    // Clear in-memory token and user
+    this.token = null;
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return this.token;
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.token && !!this.currentUserSubject.value;
   }
 
   hasPermission(permission: string): boolean {
     const user = this.currentUserSubject.value;
     return user?.permissions.includes(permission) || false;
+  }
+
+  getCurrentUser(): LoginResponse | null {
+    return this.currentUserSubject.value;
   }
 }

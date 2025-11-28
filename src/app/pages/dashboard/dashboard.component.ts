@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { ApplicationService } from '../../services/application.service';
 
 @Component({
@@ -8,6 +9,7 @@ import { ApplicationService } from '../../services/application.service';
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
+  private apiUrl = environment.apiUrl;
   stats = {
     total: 0,
     submitted: 0,
@@ -22,7 +24,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     private applicationService: ApplicationService,
     private http: HttpClient
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -30,7 +32,7 @@ export class DashboardComponent implements OnInit {
 
   loadDashboardData(): void {
     // Load dashboard stats
-    this.http.get<any>('http://localhost:8081/api/admin/dashboard/stats').subscribe({
+    this.http.get<any>(`${this.apiUrl}/dashboard/stats`).subscribe({
       next: (stats) => {
         this.stats = {
           total: stats.totalApplications,
