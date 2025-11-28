@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface KycApplication {
   id: string;
@@ -31,9 +32,9 @@ export interface PageResponse<T> {
   providedIn: 'root'
 })
 export class ApplicationService {
-  private apiUrl = 'http://localhost:8081/api/admin/applications';
+  private apiUrl = `${environment.apiUrl}/applications`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getApplications(page: number = 0, size: number = 10): Observable<PageResponse<KycApplication>> {
     const params = new HttpParams()
